@@ -1,0 +1,21 @@
+# 本地配置（**不要提交到版本库**）
+#
+# 复制本文件为 `local.properties` 后按自己机器修改。
+# Gradle 不会自动加载 local.properties，本项目在 app/build.gradle.kts 里手动读取。
+
+# ---- Android SDK 路径（**必须改成你自己机器上的**）----
+# Windows 示例：
+#sdk.dir=C\:\\Users\\你的用户名\\AppData\\Local\\Android\\Sdk
+# macOS 示例：
+#sdk.dir=/Users/你的用户名/Library/Android/sdk
+
+# ---- 后端地址 ----
+# 模拟器访问宿主机：用 10.0.2.2（不需要改）
+# 真机访问电脑：用电脑的局域网 IP，如 http://192.168.1.5:8080
+#
+# 查看自己的局域网 IP：
+#   Windows: ipconfig
+#   macOS/Linux: ifconfig | grep "inet "
+#
+# ⚠️ 真机时手机与电脑必须连同一个 WiFi
+api.baseUrl=http://10.0.2.2:8080

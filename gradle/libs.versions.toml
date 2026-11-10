@@ -1,0 +1,48 @@
+# 版本目录 —— 唯一版本事实来源
+# 规则：任何 build 脚本里不得出现硬编码版本号。
+# 依据：本仓后端 ADR-009；液态玻璃模块要求见 docs/09-App技术选型与液态玻璃方案.md。
+
+[versions]
+# AGP 9.4.0 与 Kotlin 2.3.10 已实测兼容（2026-11-09 构建绿）。
+agp = "9.4.0"
+# 液态玻璃套件要求 Kotlin 2.3.10（其 AAR 的 POM 硬依赖 stdlib 2.3.10）。
+kotlin = "2.3.10"
+
+# 液态玻璃底层引擎。禁止升 2.x —— 2.x 是 KMP，需 Compose 1.12 + AGP 9.1+。
+kyantBackdrop = "1.0.6"
+kyantShapes = "1.2.0"
+
+androidxCore = "1.16.0"
+androidxActivityCompose = "1.10.1"
+composeBom = "2026.08.00"
+androidxProfileinstaller = "1.4.1"
+androidxLifecycle = "2.9.4"
+kotlinxSerialization = "1.9.0"
+okhttp = "5.1.0"
+
+[libraries]
+# ---- 液态玻璃底层引擎（由 :liquidglass 模块的 POM 传递，此处显式声明便于追溯）----
+kyant-backdrop = { module = "io.github.kyant0:backdrop", version.ref = "kyantBackdrop" }
+kyant-shapes = { module = "io.github.kyant0:shapes", version.ref = "kyantShapes" }
+
+# ---- AndroidX ----
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "androidxProfileinstaller" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
