@@ -70,6 +70,7 @@ fun PreparationScreen(
     onViewDetailClick: () -> Unit = {},
     onContinueLearningClick: (String) -> Unit = {},
     onRecordEntryClick: () -> Unit = {},
+    onNoticeClick: () -> Unit = {},
 ) {
     val app = LocalContext.current.applicationContext as CompetitionApp
     val viewModel: PreparationViewModel = viewModel(
@@ -86,7 +87,7 @@ fun PreparationScreen(
             .background(Color.White)
             .statusBarsPadding()
     ) {
-        PageNavigation(data)
+        PageNavigation(data, onNoticeClick = onNoticeClick)
         PreparationContent(
             state = state,
             onViewDetailClick = onViewDetailClick,
@@ -145,7 +146,7 @@ private fun ColumnScope.PreparationContent(
 
 // ===== 页面导航 =====
 @Composable
-private fun PageNavigation(data: PreparationData) {
+private fun PageNavigation(data: PreparationData, onNoticeClick: () -> Unit) {
     val progress = data.preparation?.progress
     val subtitle = if (progress != null && progress.total > 0) {
         "已完成 " + progress.completed + "/" + progress.total + " 课时"
@@ -175,11 +176,18 @@ private fun PageNavigation(data: PreparationData) {
                 color = TextSecondary
             )
         }
-        Image(
-            painter = painterResource(R.drawable.ic_bell),
-            contentDescription = "通知",
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clickable { onNoticeClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_bell),
+                contentDescription = "通知",
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
