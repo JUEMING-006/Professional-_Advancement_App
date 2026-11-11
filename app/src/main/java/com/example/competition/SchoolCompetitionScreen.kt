@@ -74,6 +74,7 @@ fun SchoolCompetitionScreen(
     onProfileClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onViewDetailClick: () -> Unit = {},
+    onNoticeClick: () -> Unit = {},
 ) {
     val app = LocalContext.current.applicationContext as CompetitionApp
     val viewModel: SchoolCompetitionViewModel = viewModel(
@@ -88,7 +89,7 @@ fun SchoolCompetitionScreen(
             .background(Color.White)
             .statusBarsPadding()
     ) {
-        PageNavigation()
+        PageNavigation(onNoticeClick = onNoticeClick)
         SchoolContent(
             state = state,
             onSearchClick = onSearchClick,
@@ -136,7 +137,7 @@ private fun ColumnScope.SchoolContent(
 
 // ===== 页面导航 =====
 @Composable
-private fun PageNavigation() {
+private fun PageNavigation(onNoticeClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,11 +159,18 @@ private fun PageNavigation() {
                 color = TextSecondary
             )
         }
-        Image(
-            painter = painterResource(R.drawable.ic_bell),
-            contentDescription = "通知",
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clickable { onNoticeClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_bell),
+                contentDescription = "通知",
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

@@ -70,6 +70,7 @@ fun RecordListScreen(
     onRecordDetailClick: () -> Unit = {},
     onPreparationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    onNoticeClick: () -> Unit = {},
 ) {
     val app = LocalContext.current.applicationContext as CompetitionApp
     val viewModel: RecordListViewModel = viewModel(
@@ -86,7 +87,7 @@ fun RecordListScreen(
             .background(Color.White)
             .statusBarsPadding()
     ) {
-        PageNavigation(response)
+        PageNavigation(response, onNoticeClick = onNoticeClick)
         RecordContent(
             state = state,
             onRetry = viewModel::reload,
@@ -153,7 +154,7 @@ private fun RecordList(
 
 // ===== 页面导航（无返回按钮） =====
 @Composable
-private fun PageNavigation(response: RecordListResponse?) {
+private fun PageNavigation(response: RecordListResponse?, onNoticeClick: () -> Unit) {
     val total = response?.statistics?.totalRecords ?: 0
     val subtitle = if (total > 0) "已积累 $total 条记录" else "还没有记录"
 
@@ -179,11 +180,18 @@ private fun PageNavigation(response: RecordListResponse?) {
                 color = TextSecondary
             )
         }
-        Image(
-            painter = painterResource(R.drawable.ic_bell),
-            contentDescription = "通知",
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clickable { onNoticeClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_bell),
+                contentDescription = "通知",
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -37,8 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 // ===== 颜色 =====
 private val TextPrimary = Color(0xFF202A26)
@@ -63,6 +68,8 @@ private val BorderGray = Color(0xFFE7ECE9)
 fun CompetitionDiscoveryScreen(
     onHotCompetitionClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
+    onCategoryClick: () -> Unit = {},
+    onDeadlineClick: () -> Unit = {},
     onDetailClick: (String) -> Unit = {},
     onAddCompetitionClick: () -> Unit = {},
     onNoticeClick: () -> Unit = {},
@@ -90,7 +97,7 @@ fun CompetitionDiscoveryScreen(
             .background(Color.White)
             .statusBarsPadding()
     ) {
-        PageNavigation()
+        PageNavigation(onNoticeClick = onNoticeClick)
 
         Column(
             modifier = Modifier
@@ -100,8 +107,12 @@ fun CompetitionDiscoveryScreen(
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             SearchBox(onClick = onSearchClick)
-            RecommendCard()
-            QuickEntries(onHotCompetitionClick = onHotCompetitionClick)
+            CarouselBanner()
+            QuickEntries(
+                onHotCompetitionClick = onHotCompetitionClick,
+                onCategoryClick = onCategoryClick,
+                onDeadlineClick = onDeadlineClick,
+            )
 
             // 智能体入口：用户自己贴章程 → 抽取成结构化赛事。
             // 不抓取任何平台内容，规避采集合规风险（见 docs/11）。
@@ -138,7 +149,7 @@ fun CompetitionDiscoveryScreen(
 
 // ===== 页面导航 =====
 @Composable
-private fun PageNavigation() {
+private fun PageNavigation(onNoticeClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,11 +171,18 @@ private fun PageNavigation() {
                 color = TextSecondary
             )
         }
-        Image(
-            painter = painterResource(R.drawable.ic_bell),
-            contentDescription = "通知",
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clickable { onNoticeClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_bell),
+                contentDescription = "通知",
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -214,85 +232,140 @@ private fun SearchBox(onClick: () -> Unit) {
     }
 }
 
-// ===== 秋季备赛推荐 =====
+// ===== 首页轮播图 =====
+private data class CarouselSlide(
+    val bgRes: Int,
+    val titleLine1: String,
+    val titleLine2: String,
+    val subtitle: String,
+)
+
+private val carouselSlides = listOf(
+    CarouselSlide(R.drawable.carousel_bg_1, "从一场好比赛，", "找到你的新可能", "发现适合的赛事"),
+    CarouselSlide(R.drawable.carousel_bg_2, "从一场好协作，", "点燃你的同行力", "选好团队角色"),
+    CarouselSlide(R.drawable.carousel_bg_3, "从一程好深耕，", "奔赴你的新高度", "把每一步准备变成看得见的成长"),
+)
+
 @Composable
-private fun RecommendCard() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(LightGreenBg)
-            .padding(22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+private fun CarouselBanner() {
+    val pagerState = rememberPagerState(pageCount = { carouselSlides.size })
+
+    // 每 3 秒平滑切到下一张，到底后回到第一张循环。
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            val next = (pagerState.currentPage + 1) % carouselSlides.size
+            pagerState.animateScrollToPage(next)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // 容器（node 23-7383）：圆角 16 的固定外框，投影加在这个容器上，
+        // 滑动内容在框内被裁剪，投影不会跟着卡片一起滑。
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(234.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    ambientColor = Color(0x40000000),
+                    spotColor = Color(0x40000000),
+                )
+                .clip(RoundedCornerShape(16.dp)),
+        ) {
+            HorizontalPager(state = pagerState) { page ->
+                CarouselSlideCard(slide = carouselSlides[page])
+            }
+        }
+
+        // 轮播位置指示点：当前页为绿色长条，其余为灰色圆点。
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(carouselSlides.size) { index ->
+                val active = pagerState.currentPage == index
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(width = if (active) 16.dp else 6.dp, height = 6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(if (active) PrimaryGreen else BorderGray),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CarouselSlideCard(slide: CarouselSlide) {
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // 专题标识
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        // 整卡彩色插图背景。
+        Image(
+            painter = painterResource(slide.bgRes),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Tag(text = "秋季备赛指南", background = LightGreenBg)
-            Image(
-                painter = painterResource(R.drawable.ic_sparkles),
-                contentDescription = null,
-                modifier = Modifier.size(22.dp)
-            )
-        }
+            // 专题标识
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Tag(text = "秋季备赛指南", background = LightGreenBg)
+                Image(
+                    painter = painterResource(R.drawable.ic_sparkles),
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
 
-        // 主标题
-        Column {
-            Text(
-                text = "从一场好比赛，",
-                fontSize = 27.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 37.8.sp
-            )
-            Text(
-                text = "找到你的新可能",
-                fontSize = 27.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 37.8.sp
-            )
-        }
+            // 主标题
+            Column {
+                Text(
+                    text = slide.titleLine1,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    lineHeight = 37.8.sp
+                )
+                Text(
+                    text = slide.titleLine2,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    lineHeight = 37.8.sp
+                )
+            }
 
-        // 副标题
-        Column {
+            // 副标题
             Text(
-                text = "发现适合的赛事，选好团队角色，",
+                text = slide.subtitle,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal,
                 color = TextSecondary,
                 lineHeight = 20.15.sp
             )
-            Text(
-                text = "把每一步准备变成看得见的成长。",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Normal,
-                color = TextSecondary,
-                lineHeight = 20.15.sp
-            )
-        }
 
-        // 专题入口
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+            // 专题入口
             Text(
                 text = "寻找我的比赛 →",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen
-            )
-            Image(
-                painter = painterResource(R.drawable.ic_pagination),
-                contentDescription = null,
-                modifier = Modifier
-                    .width(26.dp)
-                    .height(6.dp)
             )
         }
     }
@@ -300,7 +373,11 @@ private fun RecommendCard() {
 
 // ===== 发现入口 =====
 @Composable
-private fun QuickEntries(onHotCompetitionClick: () -> Unit) {
+private fun QuickEntries(
+    onHotCompetitionClick: () -> Unit,
+    onCategoryClick: () -> Unit,
+    onDeadlineClick: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -316,12 +393,14 @@ private fun QuickEntries(onHotCompetitionClick: () -> Unit) {
             iconRes = R.drawable.ic_shapes,
             title = "专业分类",
             subtitle = "找到适合你的",
+            onClick = onCategoryClick,
             modifier = Modifier.weight(1f)
         )
         QuickEntry(
             iconRes = R.drawable.ic_calendar_days,
             title = "近期截止",
             subtitle = "不错过报名",
+            onClick = onDeadlineClick,
             modifier = Modifier.weight(1f)
         )
     }
